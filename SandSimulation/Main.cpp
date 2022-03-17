@@ -30,27 +30,27 @@ public:
 
 };
 vec2 initialScreenSize{ 1800, 1200 };
-vec2 squareSize{ 40,40 };
+vec2 squareSize{ 10,10 };
 
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-void WinInit();
+void WinInit(vec2 screenSize);
 void WinShow(HDC dc);
 
-RECT screenSize;
+RECT clientRect;
 
 // Creating a grid:
-//vec2 squareAmount{ screenSize.right / squareSize.x,  screenSize.bottom / squareSize.y };
+//vec2 squareAmount{ clientRect.right / squareSize.x,  clientRect.bottom / squareSize.y };
 //int rowAmount = squareAmount.y;
 //int columnAmount = squareAmount.x;
 
-int squareAmountX = initialScreenSize.x / squareSize.x;
-int squareAmountY = initialScreenSize.y / squareSize.y;
-int rowAmount = squareAmountY;
-int columnAmount = squareAmountX;
+//int squareAmountX = initialScreenSize.x / squareSize.x;
+//int squareAmountY = initialScreenSize.y / squareSize.y;
+//int rowAmount = squareAmountY;
+//int columnAmount = squareAmountX;
 
 
 //std::vector<RECT> column(squareAmount.y);// column of squaes
-std::vector<std::vector<RECT>> grid(columnAmount);
+std::vector<std::vector<RECT>> grid/*(columnAmount)*/;
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) 
 {
@@ -81,7 +81,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 
-
+	WinInit(vec2(initialScreenSize));
+	
 	MSG msg;
 	while (true)
 	{
@@ -94,7 +95,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		}
 		else
 		{
-			WinInit();
 			WinShow(dc);
 		}
 	}
@@ -108,7 +108,8 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		PostQuitMessage(0);
 	else if (msg == WM_SIZE)
 	{
-		GetClientRect(hwnd, &screenSize);
+		GetClientRect(hwnd, &clientRect);
+		WinInit(vec2(clientRect.right, clientRect.bottom));
 	}
 	else if (msg == WM_CHAR)
 	{
@@ -118,10 +119,16 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	else
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 }
-void WinInit()
+void WinInit(vec2 screenSize)
 {
-	//int squareAmountX = screenSize.right / squareSize.x;
-	//int squareAmountY = screenSize.bottom / squareSize.y;
+	int squareAmountX = screenSize.x / squareSize.x;
+	int squareAmountY = screenSize.y / squareSize.y;
+	int rowAmount = squareAmountY;
+	int columnAmount = squareAmountX;
+
+	grid.resize(columnAmount);
+
+
 	// Initializing the grid:
 	for(int i = 0; i < columnAmount; ++i)
 		for (int j = 0; j < rowAmount; ++j)
@@ -142,53 +149,38 @@ void WinInit()
 }
 void WinShow(HDC dc)
 {
-	//HDC memDC = CreateCompatibleDC(dc);
-	//int cx = screenSize.right - screenSize.left;
-	//int cy = screenSize.bottom - screenSize.top;
-	//HBITMAP memBM = CreateCompatibleBitmap(dc, cx, screenSize.bottom - screenSize.top);
-	//SelectObject(memDC, memBM);// Attaching memBM to memDC
+	HDC memDC = CreateCompatibleDC(dc);
+	int cx = clientRect.right - clientRect.left;
+	int cy = clientRect.bottom - clientRect.top;
+	HBITMAP memBM = CreateCompatibleBitmap(dc, cx, clientRect.bottom - clientRect.top);
+	SelectObject(memDC, memBM);// Attaching memBM to memDC
 
-	//// White background
-	//SelectObject(memDC, GetStockObject(DC_PEN));
-	//SetDCPenColor(memDC, RGB(255, 255, 255));
-	//SelectObject(memDC, GetStockObject(DC_BRUSH));
-	//SetDCBrushColor(memDC, RGB(255, 255, 255));
-	//Rectangle(memDC, screenSize.left, screenSize.top, screenSize.right, screenSize.bottom);
-
-
-	/*SelectObject(memDC, GetStockObject(DC_PEN));
-	SetDCPenColor(memDC, RGB(100, 100, 255));
+	// White background
+	SelectObject(memDC, GetStockObject(DC_PEN));
+	SetDCPenColor(memDC, RGB(255, 255, 255));
 	SelectObject(memDC, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(memDC, RGB(100, 255, 100));
+	SetDCBrushColor(memDC, RGB(255, 255, 255));
+	Rectangle(memDC, clientRect.left, clientRect.top, clientRect.right, clientRect.bottom);
 
-	for (int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
+
+	SelectObject(memDC, GetStockObject(DC_PEN));
+	SetDCPenColor(memDC, RGB(0, 0, 0));
+	SelectObject(memDC, GetStockObject(DC_BRUSH));
+	SetDCBrushColor(memDC, RGB(255, 255, 255));
+
+	for (int i = 0; i < grid.size(); ++i)
+		for (int j = 0; j < grid.at(i).size(); ++j)
 		{
-			Rectangle( memDC,
-				grid.at(i)->at(j).left,
-				grid.at(i)->at(j).top,
-				grid.at(i)->at(j).right,
-				grid.at(i)->at(j).bottom );
-		}*/
-
-
-	/*BitBlt(dc, 0, 0, cx, cy, memDC, 0, 0, SRCCOPY);
-	DeleteDC(memDC);
-	DeleteObject(memBM);*/
-
-	SelectObject(dc, GetStockObject(DC_PEN));
-	SetDCPenColor(dc, RGB(100, 100, 255));
-	SelectObject(dc, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(dc, RGB(100, 255, 100));
-
-	for (int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
-		{
-			Rectangle(dc,
+			Rectangle(memDC,
 				grid.at(i).at(j).left,
 				grid.at(i).at(j).top,
 				grid.at(i).at(j).right,
 				grid.at(i).at(j).bottom);
 		}
+
+
+	BitBlt(dc, 0, 0, cx, cy, memDC, 0, 0, SRCCOPY);
+	DeleteDC(memDC);
+	DeleteObject(memBM);
 
 }
