@@ -20,10 +20,15 @@ public:
 	}
 
 };
-vec2 initialScreenSize{ 1800, 1200 };
+vec2 screenSize{ 1800, 1200 };
 vec2 squareSize{ 10,10 };
 
-enum class cellTypes
+vec2 squareAmount;
+int rowAmount;
+int columnAmount;
+
+
+enum class cellType
 {
 	air = 0,
 	sand = 1
@@ -33,12 +38,13 @@ class cell
 {
 public:
 	RECT body;
-	cellTypes type;
+	cellType type;
 };
 
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
 void WinShow(HDC dc);
+void changeCellType(vec2 cursorpos, cellType type);
 
 RECT clientRect;
 
@@ -57,16 +63,15 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 #define WS_CUSTOMWINDOW ( WS_OVERLAPPED | \
 						  WS_CAPTION | \
 						  WS_SYSMENU | \
-						  WS_MINIMIZEBOX | \
-						  WS_MAXIMIZEBOX )
+						  WS_MINIMIZEBOX )
 	
-	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_CUSTOMWINDOW, 0, 0, initialScreenSize.x, initialScreenSize.y, NULL, NULL, NULL, NULL);
+	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_CUSTOMWINDOW, 0, 0, screenSize.x, screenSize.y, NULL, NULL, NULL, NULL);
 
 	HDC dc = GetDC(hwnd);
 
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 
-	WinInit(initialScreenSize);
+	WinInit(screenSize);
 	
 	MSG msg;
 	while (true)
@@ -103,14 +108,20 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (wparam == VK_ESCAPE)
 			PostQuitMessage(0);
 	}
+	else if (msg == WM_LBUTTONDOWN)
+	{
+		vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
+		changeCellType(cursorPos, cellType::sand);
+	}
 	else
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 }
-void WinInit(vec2 screenSize)
+void WinInit(vec2 newScreenSize)
 {
-	vec2 squareAmount{ screenSize.x / squareSize.x, screenSize.y / squareSize.y };
-	int rowAmount = squareAmount.y;
-	int columnAmount = squareAmount.x;
+	screenSize = newScreenSize;
+	squareAmount = vec2( screenSize.x / squareSize.x, screenSize.y / squareSize.y );
+	rowAmount = squareAmount.y;
+	columnAmount = squareAmount.x;
 	
 	grid.resize(columnAmount);
 
@@ -128,11 +139,11 @@ void WinInit(vec2 screenSize)
 			// Turning cells in the first row into sand. 
 			if (j == rowAmount - 1)
 			{
-				c.type = cellTypes::sand;
+				c.type = cellType::sand;
 			}
 			else
 			{
-				c.type = cellTypes::air;
+				c.type = cellType::air;
 			}
 
 			
@@ -162,11 +173,11 @@ void WinShow(HDC dc)
 		{
 			cell* current = &grid.at(i).at(j);
 
-			if (current->type == cellTypes::air)
+			if (current->type == cellType::air)
 			{
 				// Not drawing them
 			}
-			else if (current->type == cellTypes::sand)
+			else if (current->type == cellType::sand)
 			{
 				SelectObject(memDC, GetStockObject(DC_PEN));
 				SetDCPenColor(memDC, RGB(0, 0, 0));
@@ -187,4 +198,19 @@ void WinShow(HDC dc)
 	DeleteDC(memDC);
 	DeleteObject(memBM);
 
+}
+void changeCellType(vec2 cursorPos, cellType type)
+{
+	for (int i = 0; i < columnAmount; ++i)
+		for (int j = 0; j < rowAmount; ++j)
+		{
+			cell* current = &grid.at(i).at(j);
+			if (cursorPos.x > current->body.left &&
+				cursorPos.y > current->body.top &&
+				cursorPos.x < current->body.right &&
+				cursorPos.y < current->body.bottom)
+			{
+				current->type = cellType::sand;
+			}
+		}
 }
