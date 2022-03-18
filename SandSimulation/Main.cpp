@@ -1,13 +1,3 @@
-
-// Plan:
-// * Divide screen into an array of squares
-//	So, screen will be a two dimansional array of squares.
-//	We can get amount of squares by dividing screen size by square size.
-// 
-// Let's spawn a square, where mouse is clicked.
-// 
-//
-
 #include "Windows.h"
 #include "memory.h"// for memset() and malloc()
 #include <vector>
@@ -29,8 +19,9 @@ public:
 	}
 
 };
-vec2 initialScreenSize{ 1800, 1200 };
-vec2 squareSize{ 10,10 };
+const vec2 initialScreenSize{ 1800, 1200 };
+const vec2 squareSize{ 10,10 };
+
 
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
@@ -38,19 +29,7 @@ void WinShow(HDC dc);
 
 RECT clientRect;
 
-// Creating a grid:
-//vec2 squareAmount{ clientRect.right / squareSize.x,  clientRect.bottom / squareSize.y };
-//int rowAmount = squareAmount.y;
-//int columnAmount = squareAmount.x;
-
-//int squareAmountX = initialScreenSize.x / squareSize.x;
-//int squareAmountY = initialScreenSize.y / squareSize.y;
-//int rowAmount = squareAmountY;
-//int columnAmount = squareAmountX;
-
-
-//std::vector<RECT> column(squareAmount.y);// column of squaes
-std::vector<std::vector<RECT>> grid/*(columnAmount)*/;
+std::vector<std::vector<RECT>> grid;
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) 
 {
@@ -61,19 +40,13 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
 	RegisterClass(&wcl);
 	
-	/*(WS_OVERLAPPED | \
-		WS_CAPTION | \
-		WS_SYSMENU | \
-		WS_THICKFRAME | \
-		WS_MINIMIZEBOX | \
-		WS_MAXIMIZEBOX)*/
 	HWND hwnd;
-#define WS_CUSTOMWINDOW (WS_VISIBLE | \
-						 WS_CAPTION | \
-						 WS_SYSMENU | \
-						 WS_MINIMIZEBOX | \
-						 WS_MAXIMIZEBOX | \
-						 WS_SIZEBOX )
+#define WS_CUSTOMWINDOW ( WS_OVERLAPPED | \
+						  WS_CAPTION | \
+						  WS_SYSMENU | \
+						  WS_SIZEBOX | \
+						  WS_MINIMIZEBOX | \
+						  WS_MAXIMIZEBOX )
 	
 	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_CUSTOMWINDOW, 0, 0, initialScreenSize.x, initialScreenSize.y, NULL, NULL, NULL, NULL);
 
@@ -81,7 +54,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 
 	ShowWindow(hwnd, SW_SHOWNORMAL);
 
-	WinInit(vec2(initialScreenSize));
+	WinInit(initialScreenSize);
 	
 	MSG msg;
 	while (true)
@@ -95,7 +68,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		}
 		else
 		{
+
 			WinShow(dc);
+
 		}
 	}
 
@@ -121,28 +96,24 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 }
 void WinInit(vec2 screenSize)
 {
-	int squareAmountX = screenSize.x / squareSize.x;
-	int squareAmountY = screenSize.y / squareSize.y;
-	int rowAmount = squareAmountY;
-	int columnAmount = squareAmountX;
-
+	vec2 squareAmount{ screenSize.x / squareSize.x, screenSize.y / squareSize.y };
+	int rowAmount = squareAmount.y;
+	int columnAmount = squareAmount.x;
+	
 	grid.resize(columnAmount);
-
 
 	// Initializing the grid:
 	for(int i = 0; i < columnAmount; ++i)
 		for (int j = 0; j < rowAmount; ++j)
 		{
-			// Allocating memory for every column:
-			//grid.at(i) = malloc(sizeof(RECT) * squareAmountY);
-
-			// Initializing grid elements wiht squares:
+			// Initializing grid elements with squares:
 			RECT square;
 			square.left = squareSize.x * i;
 			square.right = squareSize.x * (i + 1);
 			square.top = squareSize.y * j;
 			square.bottom = squareSize.y * (j + 1);
 			grid.at(i).push_back(square);
+
 		}
 	
 	
@@ -155,19 +126,21 @@ void WinShow(HDC dc)
 	HBITMAP memBM = CreateCompatibleBitmap(dc, cx, clientRect.bottom - clientRect.top);
 	SelectObject(memDC, memBM);// Attaching memBM to memDC
 
-	// White background
+	// White background:
 	SelectObject(memDC, GetStockObject(DC_PEN));
 	SetDCPenColor(memDC, RGB(255, 255, 255));
 	SelectObject(memDC, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(memDC, RGB(255, 255, 255));
 	Rectangle(memDC, clientRect.left, clientRect.top, clientRect.right, clientRect.bottom);
 
-
+	
+	// Grid:
 	SelectObject(memDC, GetStockObject(DC_PEN));
 	SetDCPenColor(memDC, RGB(0, 0, 0));
 	SelectObject(memDC, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(memDC, RGB(255, 255, 255));
 
+	
 	for (int i = 0; i < grid.size(); ++i)
 		for (int j = 0; j < grid.at(i).size(); ++j)
 		{
