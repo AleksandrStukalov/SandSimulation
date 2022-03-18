@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+
+
 class vec2
 {
 public:
@@ -27,13 +29,11 @@ vec2 squareAmount;
 int rowAmount;
 int columnAmount;
 
-
 enum class cellType
 {
 	air = 0,
 	sand = 1
 };
-
 class cell
 {
 public:
@@ -45,7 +45,7 @@ LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
 void WinShow(HDC dc);
 void changeCellType(vec2 cursorpos, cellType type);
-
+void WinProcess();
 RECT clientRect;
 
 std::vector<std::vector<cell>> grid;
@@ -85,9 +85,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		}
 		else
 		{
-
+			WinProcess();
 			WinShow(dc);
-
 		}
 	}
 
@@ -205,5 +204,54 @@ void changeCellType(vec2 cursorPos, cellType type)
 			{
 				current->type = cellType::sand;
 			}
+		}
+}
+void WinProcess()
+{
+	for (int i = 0; i < grid.size(); ++i)
+		for (int j = 0; j < grid.at(i).size(); ++j)
+		{
+			cell* current = &grid.at(i).at(j);
+
+
+			if (current->type == cellType::sand)
+			{
+				if (j+1 < rowAmount)
+				{
+					cell* bottomNeighboor = &grid[i][j + 1];
+
+					if (bottomNeighboor->type == cellType::air)
+					{
+						bottomNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+					break;
+				}
+				else if (i-1 > 0)
+				{
+					cell* leftNeighboor = &grid[i - 1][j];
+					
+					if (leftNeighboor->type == cellType::air)
+					{
+						leftNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+					break;
+				}
+				else if (i + 1 < columnAmount)
+				{
+					cell* rightNeighboor = &grid[i + 1][j];
+
+					if (rightNeighboor->type == cellType::air)
+					{
+						rightNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+					break;
+				}
+				
+
+			}
+
 		}
 }
