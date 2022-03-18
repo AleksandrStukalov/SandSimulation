@@ -25,8 +25,8 @@ vec2 squareSize{ 10,10 };
 
 enum class cellTypes
 {
-	air,
-	sand
+	air = 0,
+	sand = 1
 };
 
 class cell
@@ -57,7 +57,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 #define WS_CUSTOMWINDOW ( WS_OVERLAPPED | \
 						  WS_CAPTION | \
 						  WS_SYSMENU | \
-						  WS_SIZEBOX | \
 						  WS_MINIMIZEBOX | \
 						  WS_MAXIMIZEBOX )
 	
@@ -125,7 +124,18 @@ void WinInit(vec2 screenSize)
 			c.body.right = squareSize.x * (i + 1);
 			c.body.top = squareSize.y * j;
 			c.body.bottom = squareSize.y * (j + 1);
-			c.type = cellTypes::air;
+
+			// Turning cells in the first row into sand. 
+			if (j == rowAmount - 1)
+			{
+				c.type = cellTypes::sand;
+			}
+			else
+			{
+				c.type = cellTypes::air;
+			}
+
+			
 			grid.at(i).push_back(c);
 		}
 	
@@ -154,7 +164,7 @@ void WinShow(HDC dc)
 
 			if (current->type == cellTypes::air)
 			{
-				// Not drowing them
+				// Not drawing them
 			}
 			else if (current->type == cellTypes::sand)
 			{
