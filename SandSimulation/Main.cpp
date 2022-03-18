@@ -1,6 +1,7 @@
 #include "Windows.h"
 #include "memory.h"// for memset() and malloc()
 #include <vector>
+#include <string>
 
 class vec2
 {
@@ -19,9 +20,21 @@ public:
 	}
 
 };
-const vec2 initialScreenSize{ 1800, 1200 };
-const vec2 squareSize{ 10,10 };
+vec2 initialScreenSize{ 1800, 1200 };
+vec2 squareSize{ 10,10 };
 
+enum class cellTypes
+{
+	air,
+	sand
+};
+
+class cell
+{
+public:
+	RECT body;
+	cellTypes type;
+};
 
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
@@ -29,7 +42,7 @@ void WinShow(HDC dc);
 
 RECT clientRect;
 
-std::vector<std::vector<RECT>> grid;
+std::vector<std::vector<cell>> grid;
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) 
 {
@@ -106,14 +119,14 @@ void WinInit(vec2 screenSize)
 	for(int i = 0; i < columnAmount; ++i)
 		for (int j = 0; j < rowAmount; ++j)
 		{
-			// Initializing grid elements with squares:
-			RECT square;
-			square.left = squareSize.x * i;
-			square.right = squareSize.x * (i + 1);
-			square.top = squareSize.y * j;
-			square.bottom = squareSize.y * (j + 1);
-			grid.at(i).push_back(square);
-
+			// Initializing grid cells:
+			cell c;
+			c.body.left = squareSize.x * i;
+			c.body.right = squareSize.x * (i + 1);
+			c.body.top = squareSize.y * j;
+			c.body.bottom = squareSize.y * (j + 1);
+			c.type = cellTypes::air;
+			grid.at(i).push_back(c);
 		}
 	
 	
@@ -126,29 +139,37 @@ void WinShow(HDC dc)
 	HBITMAP memBM = CreateCompatibleBitmap(dc, cx, clientRect.bottom - clientRect.top);
 	SelectObject(memDC, memBM);// Attaching memBM to memDC
 
-	// White background:
+	// Background:
 	SelectObject(memDC, GetStockObject(DC_PEN));
 	SetDCPenColor(memDC, RGB(255, 255, 255));
 	SelectObject(memDC, GetStockObject(DC_BRUSH));
 	SetDCBrushColor(memDC, RGB(255, 255, 255));
 	Rectangle(memDC, clientRect.left, clientRect.top, clientRect.right, clientRect.bottom);
 
-	
 	// Grid:
-	SelectObject(memDC, GetStockObject(DC_PEN));
-	SetDCPenColor(memDC, RGB(0, 0, 0));
-	SelectObject(memDC, GetStockObject(DC_BRUSH));
-	SetDCBrushColor(memDC, RGB(255, 255, 255));
-
-	
 	for (int i = 0; i < grid.size(); ++i)
 		for (int j = 0; j < grid.at(i).size(); ++j)
 		{
-			Rectangle(memDC,
-				grid.at(i).at(j).left,
-				grid.at(i).at(j).top,
-				grid.at(i).at(j).right,
-				grid.at(i).at(j).bottom);
+			cell* current = &grid.at(i).at(j);
+
+			if (current->type == cellTypes::air)
+			{
+				// Not drowing them
+			}
+			else if (current->type == cellTypes::sand)
+			{
+				SelectObject(memDC, GetStockObject(DC_PEN));
+				SetDCPenColor(memDC, RGB(0, 0, 0));
+				SelectObject(memDC, GetStockObject(DC_BRUSH));
+				SetDCBrushColor(memDC, RGB(245, 245, 220));// beige color
+
+				Rectangle(memDC,
+					current->body.left,
+					current->body.top,
+					current->body.right,
+					current->body.bottom);
+			}
+			
 		}
 
 
