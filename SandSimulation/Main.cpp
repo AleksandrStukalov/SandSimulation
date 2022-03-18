@@ -56,7 +56,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	memset(&wcl, 0, sizeof(WNDCLASS));
 	wcl.lpfnWndProc = WndProc;// Setting message proccesing function
 	wcl.lpszClassName = L"WindowClass";
-	wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcl.hCursor = LoadCursor(NULL, IDC_CROSS);
 	RegisterClass(&wcl);
 	
 	HWND hwnd;
@@ -108,7 +108,8 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (wparam == VK_ESCAPE)
 			PostQuitMessage(0);
 	}
-	else if (msg == WM_LBUTTONDOWN)
+	/*else if (msg == WM_LBUTTONDOWN)*/ // When LMB is clicked
+	else if((GetKeyState(VK_LBUTTON) & 0x8000) != 0) // When LMB is pressed
 	{
 		vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
 		changeCellType(cursorPos, cellType::sand);
@@ -136,15 +137,7 @@ void WinInit(vec2 newScreenSize)
 			c.body.top = squareSize.y * j;
 			c.body.bottom = squareSize.y * (j + 1);
 
-			// Turning cells in the first row into sand. 
-			if (j == rowAmount - 1)
-			{
-				c.type = cellType::sand;
-			}
-			else
-			{
-				c.type = cellType::air;
-			}
+			c.type = cellType::air;
 
 			
 			grid.at(i).push_back(c);
