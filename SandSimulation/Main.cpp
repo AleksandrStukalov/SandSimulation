@@ -99,8 +99,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 
 LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	vec2 prevCursorPos;
-	vec2 cursorPos;
 	if (msg == WM_DESTROY)
 		PostQuitMessage(0);
 	else if (msg == WM_SIZE)
@@ -120,12 +118,7 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
 		if (cursorPos.y > 20)// When cursor is not over the title bar
 		{
-			if (prevCursorPos != cursorPos)
-			{
-				changeCellType(cursorPos, cellType::sand);
-				prevCursorPos = cursorPos;
-			}
-			
+			changeCellType(cursorPos, cellType::sand);
 		}
 		else// When it is over the title bar, we want default message processing function to take control,
 			// because otherwise resizing and closing buttons doesn't work.
@@ -246,10 +239,10 @@ void changeCellType(vec2 cursorPos, cellType type)
 					int cellsDown = round((cursorPos.y - screenSize.y) / cellSize.y);// How many cells lower we are, in
 					// accordance to amount of cells we have in Y axis.
 					// e.g. screenSize.y = 100, cursorPos.y = 110, cellSize = 10 -> We are 1 cell lower.
-					if(cellAmount.y + cellsDown - 3 <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
-						grid[i][cellAmount.y + cellsDown - 3].type = type;
+					int temp = cellAmount.y + cellsDown - 3;
+					if( temp <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
+						grid[i][temp - 1].type = type;
 				}
-				// Don't ask me how it works. It just does and that's it. =)
 			}
 		}
 }
