@@ -26,7 +26,7 @@ bool operator != (const vec2& v1, const vec2& v2)
 	return (v1.x != v2.y &&
 		v1.y != v2.y);
 }
-vec2 screenSize{ 1000, 800 };
+vec2 screenSize{ 2000, 1000 };
 vec2 cellSize{ 10,10 };
 
 vec2 cellAmount;
@@ -248,52 +248,52 @@ void changeCellType(vec2 cursorPos, cellType type)
 }
 void WinProcess()
 {
-	//// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
-	//for (int i = columnAmount - 1; i >= 0; --i)
-	//	for (int j = rowAmount - 1; j >= 0; --j)
-	//	{
-	//		cell* current = &grid.at(i).at(j);
+	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
+	for (int i = columnAmount - 1; i >= 0; --i)
+		for (int j = rowAmount - 1; j >= 0; --j)
+		{
+			cell* current = &grid.at(i).at(j);
 
 
-	//		if (current->type == cellType::sand)
-	//		{
-	//			if (j+1 < rowAmount)
-	//			{
-	//				cell* bottomNeighboor = &grid[i][j + 1];
+			if (current->type == cellType::sand)
+			{
+				if (j+1 < cellAmount.y)
+				{
+					cell* bottomNeighboor = &grid[i][j + 1];
 
-	//				if (bottomNeighboor->type == cellType::air)
-	//				{
-	//					bottomNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			else if (i-1 > 0 && j + 1 < screenSize.y)
-	//			{
-	//				cell* leftDownNeighboor = &grid[i - 1][j + 1];
-	//				
-	//				if (leftDownNeighboor->type == cellType::air)
-	//				{
-	//					leftDownNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			else if (i + 1 < columnAmount && j + 1 < screenSize.y)
-	//			{
-	//				cell* rightDownNeighboor = &grid[i + 1][j + 1];
+					if (bottomNeighboor->type == cellType::air)
+					{
+						bottomNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				if (i - 1 > 0 && j + 1 < cellAmount.y)
+				{
+					cell* leftDownNeighboor = &grid[i - 1][j + 1];
 
-	//				if (rightDownNeighboor->type == cellType::air)
-	//				{
-	//					rightDownNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				// Stay put.
-	//			}
-	//			
+					if (leftDownNeighboor->type == cellType::air)
+					{
+						leftDownNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+				{
+					cell* rightDownNeighboor = &grid[i + 1][j + 1];
 
-	//		}
+					if (rightDownNeighboor->type == cellType::air)
+					{
+						rightDownNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				else
+				{
+					// Stay put.
+				}
+				
+				// Why the hell I've changed else if to if and everything started to work properly!?
+			}
 
-	//	}
+		}
 }
