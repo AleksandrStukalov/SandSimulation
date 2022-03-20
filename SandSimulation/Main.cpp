@@ -37,7 +37,8 @@ int columnAmount;
 enum class cellType
 {
 	air = 0,
-	sand = 1
+	sand,
+	water
 };
 class cell
 {
@@ -63,8 +64,10 @@ cell* CellGetCovered(vec2 cursorPos);
 void CellChangeType(vec2 cursorPos, cellType type);
 // Cell behaviour:
 void WinProcess();
-void goLeftFirst(int i, int j, cell* current);
-void goRightFirst(int i, int j, cell* current);
+void goLeftDownFirst(int x, int y, cell* current);
+void goRightDownFirst(int x, int y, cell* current);
+void goLeftFirst(int x, int y, cell* current);
+void goRightFirst(int x, int y, cell* current);
 
 RECT clientRect;
 
@@ -115,12 +118,17 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 			GetCursorPos(cursorPos);
 			ScreenToClient(hwnd, cursorPos);
 
+			cellType type;
 			// Creating sand when LMB is held:
 			if ((GetKeyState(VK_LBUTTON) & 0x8000) != 0)
 			{
+				if (GetKeyState('S') < 0) type = cellType::sand;
+				else if (GetKeyState('W') < 0) type = cellType::water;
+				else type = cellType::air;
+				
 				if (cursorPos->y > 20)// When cursor is not over the title bar
 				{
-					CellChangeType(vec2(cursorPos->x, cursorPos->y), cellType::sand);
+					CellChangeType(vec2(cursorPos->x, cursorPos->y), type);
 				}
 			}
 			// "Deleting" cell when RMB is held:
@@ -136,8 +144,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 
 	return 0;
 }
-
-int LMBit = 0;
+// Window:
 LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	
@@ -183,20 +190,20 @@ void WinInit(vec2 newScreenSize)
 	grid.resize(columnAmount);
 
 	// Initializing the grid:
-	for(int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
+	for(int x = 0; x < columnAmount; ++x)
+		for (int y = 0; y < rowAmount; ++y)
 		{
 			// Initializing grid cells:
 			cell c;
-			c.body.left = cellSize.x * i;
-			c.body.right = cellSize.x * (i + 1);
-			c.body.top = cellSize.y * j;
-			c.body.bottom = cellSize.y * (j + 1);
+			c.body.left = cellSize.x * x;
+			c.body.right = cellSize.x * (x + 1);
+			c.body.top = cellSize.y * y;
+			c.body.bottom = cellSize.y * (y + 1);
 
 			c.type = cellType::air;
 
 			
-			grid.at(i).push_back(c);
+			grid.at(x).push_back(c);
 		}
 	
 	
@@ -217,10 +224,10 @@ void WinShow(HDC dc)
 	Rectangle(memDC, clientRect.left, clientRect.top, clientRect.right, clientRect.bottom);
 
 	// Grid:
-	for (int i = 0; i < grid.size(); ++i)
-		for (int j = 0; j < grid.at(i).size(); ++j)
+	for (int x = 0; x < grid.size(); ++x)
+		for (int y = 0; y < grid.at(x).size(); ++y)
 		{
-			cell* current = &grid.at(i).at(j);
+			cell* current = &grid.at(x).at(y);
 
 			if (current->type == cellType::air)
 			{
@@ -240,6 +247,19 @@ void WinShow(HDC dc)
 					current->body.right,
 					current->body.bottom);
 			}
+			else if (current->type == cellType::water)
+			{
+				SelectObject(memDC, GetStockObject(DC_PEN));
+				SetDCPenColor(memDC, RGB(0, 0, 0));
+				SelectObject(memDC, GetStockObject(DC_BRUSH));
+				SetDCBrushColor(memDC, RGB(0, 117, 200));// beige color
+
+				Rectangle(memDC,
+					current->body.left,
+					current->body.top,
+					current->body.right,
+					current->body.bottom);
+			}
 			
 		}
 
@@ -249,14 +269,14 @@ void WinShow(HDC dc)
 	DeleteObject(memBM);
 
 }
-
+// Cell manipulation:
 cell* CellGetCovered(vec2 cursorPos)
 {
-	for (int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
+	for (int x = 0; x < columnAmount; ++x)
+		for (int y = 0; y < rowAmount; ++y)
 		{
-			if (i == 9) break;
-			cell* current = &grid.at(i).at(j);
+			if (x == 9) break;
+			cell* current = &grid.at(x).at(y);
 			if (cursorPos.x > current->body.left &&
 				cursorPos.y > current->body.top &&
 				cursorPos.x < current->body.right &&
@@ -274,19 +294,20 @@ void CellChangeType(vec2 cursorPos, cellType type)
 		cellCovered->type = type;
 	
 }
+// Cell behaviour:
 void WinProcess()
 {
 	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
-	for (int i = columnAmount - 1; i >= 0; --i)
-		for (int j = rowAmount - 1; j >= 0; --j)
+	for (int x = columnAmount - 1; x >= 0; --x)
+		for (int y = rowAmount - 1; y >= 0; --y)
 		{
-			cell* current = &grid.at(i).at(j);
+			cell* current = &grid.at(x).at(y);
 
 			if (current->type == cellType::sand)
 			{
-				if (j + 1 < cellAmount.y)
+				if (y + 1 < cellAmount.y)
 				{
-					cell* bottomNeighboor = &grid[i][j + 1];
+					cell* bottomNeighboor = &grid[x][y + 1];
 
 					if (bottomNeighboor->type == cellType::air)
 					{
@@ -299,24 +320,60 @@ void WinProcess()
 				int rand = randIntInRange(0, 100);
 				if ( rand % 2 == 0)
 				{
-					goLeftFirst(i, j, current);
+					goLeftDownFirst(x, y, current);
 				}
 				else
 				{
-					goRightFirst(i, j, current);
+					goRightDownFirst(x, y, current);
 				}
 
 				// Why the hell I've changed else if to if and everything started to work properly!?
 			}
+			if (current->type == cellType::water)
+			{
+				// Sand behavior:
+				if (y + 1 < cellAmount.y)
+				{
+					cell* bottomNeighboor = &grid[x][y + 1];
 
+					if (bottomNeighboor->type == cellType::air)
+					{
+						bottomNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+
+				srand(time(0));
+				int rand = randIntInRange(0, 100);
+				if (rand % 2 == 0)
+				{
+					goLeftDownFirst(x, y, current);
+				}
+				else
+				{
+					goRightDownFirst(x, y, current);
+				}
+				// + Going to sides when possible:
+				rand = randIntInRange(0, 100);
+				if (rand % 2 == 0)
+				{
+					goLeftFirst(x, y, current);
+				}
+				else
+				{
+					goRightFirst(x, y, current);
+				}
+				
+			}
 
 		}
 }
-void goLeftFirst(int i, int j, cell* current)
+void goLeftDownFirst(int x, int y, cell* current)
 {
-	if (i - 1 >= 0 && j + 1 < cellAmount.y)
+	// Go left down
+	if (x - 1 >= 0 && y + 1 < cellAmount.y)
 	{
-		cell* leftDownNeighboor = &grid[i - 1][j + 1];
+		cell* leftDownNeighboor = &grid[x - 1][y + 1];
 
 		if (leftDownNeighboor->type == cellType::air)
 		{
@@ -324,9 +381,10 @@ void goLeftFirst(int i, int j, cell* current)
 			current->type = cellType::air;
 		}
 	}
-	if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+	// Go right down
+	if (x + 1 < cellAmount.x && y + 1 < cellAmount.y)
 	{
-		cell* rightDownNeighboor = &grid[i + 1][j + 1];
+		cell* rightDownNeighboor = &grid[x + 1][y + 1];
 
 			if (rightDownNeighboor->type == cellType::air)
 			{
@@ -334,13 +392,14 @@ void goLeftFirst(int i, int j, cell* current)
 					current->type = cellType::air;
 			}
 	}
-	else{}
+	else{} // Stay put
 }
-void goRightFirst(int i, int j, cell* current)
+void goRightDownFirst(int x, int y, cell* current)
 {
-	if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+	// Go right down
+	if (x + 1 < cellAmount.x && y + 1 < cellAmount.y)
 	{
-		cell* rightDownNeighboor = &grid[i + 1][j + 1];
+		cell* rightDownNeighboor = &grid[x + 1][y + 1];
 
 		if (rightDownNeighboor->type == cellType::air)
 		{
@@ -348,9 +407,10 @@ void goRightFirst(int i, int j, cell* current)
 			current->type = cellType::air;
 		}
 	}
-	if (i - 1 >= 0 && j + 1 < cellAmount.y)
+	// Go left down
+	if (x - 1 >= 0 && y + 1 < cellAmount.y)
 	{
-		cell* leftDownNeighboor = &grid[i - 1][j + 1];
+		cell* leftDownNeighboor = &grid[x - 1][y + 1];
 
 		if (leftDownNeighboor->type == cellType::air)
 		{
@@ -358,5 +418,57 @@ void goRightFirst(int i, int j, cell* current)
 			current->type = cellType::air;
 		}
 	}
-	else {}
+	else {}// Stay put
+}
+void goLeftFirst(int x, int y, cell* current)
+{
+	// Go left
+	if (x - 1 >= 0)
+	{
+		cell* leftDownNeighboor = &grid[x - 1][y];
+
+		if (leftDownNeighboor->type == cellType::air)
+		{
+			leftDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	// Go right
+	if (x + 1 < cellAmount.x)
+	{
+		cell* rightDownNeighboor = &grid[x + 1][y];
+
+		if (rightDownNeighboor->type == cellType::air)
+		{
+			rightDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	else {}// Stay put.
+}
+void goRightFirst(int x, int y, cell* current)
+{
+	// Go right
+	if (x + 1 < cellAmount.x)
+	{
+		cell* rightDownNeighboor = &grid[x + 1][y];
+
+		if (rightDownNeighboor->type == cellType::air)
+		{
+			rightDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	// Go left
+	if (x - 1 >= 0)
+	{
+		cell* leftDownNeighboor = &grid[x - 1][y];
+
+		if (leftDownNeighboor->type == cellType::air)
+		{
+			leftDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	else {}// Stay put.
 }
