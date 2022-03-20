@@ -21,16 +21,6 @@ public:
 	}
 
 };
-bool operator != (const vec2& v1, const vec2& v2)
-{
-	return (v1.x != v2.y &&
-		v1.y != v2.y);
-}
-bool operator == (const vec2& v1, const vec2& v2)
-{
-	return (v1.x == v2.x &&
-		v1.y == v2.y);
-}
 vec2 screenSize{ 1000, 800 };
 vec2 cellSize{ 10,10 };
 
@@ -90,6 +80,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 
 	WinInit(screenSize);
 
+	LPPOINT cursorPos;
+	cursorPos = (LPPOINT)malloc(sizeof(*cursorPos));
+
 	MSG msg;
 	while (true)
 	{
@@ -102,6 +95,20 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 		}
 		else
 		{
+			// Getting mouse coordinates:
+			GetCursorPos(cursorPos);
+			ScreenToClient(hwnd, cursorPos);
+
+			if ((GetKeyState(VK_LBUTTON) & 0x8000) != 0)
+			{
+				if (cursorPos->y > 20)// When cursor is not over the title bar
+				{
+					changeCellType(vec2(cursorPos->x, cursorPos->y), cellType::sand);
+				}
+			}
+			/// NOICE!
+			
+
 			WinShow(dc);
 			WinProcess();
 		}
@@ -128,23 +135,21 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	}
 	////else if (msg == WM_LBUTTONDOWN) // When LMB is clicked
 	//else if ((GetKeyState(VK_LBUTTON) & 0x8000) != 0) // When LMB is pressed
-	else if (GetAsyncKeyState(VK_LBUTTON)) // Better LMB pressed, cause it doesn't go so crazy as previous.
-	{
-		vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
-		/*if (LMBit != 1)
-		{*/
-			if (cursorPos.y > 20)// When cursor is not over the title bar
-			{
-				changeCellType(cursorPos, cellType::sand);
-			}
-			else// When it is over the title bar, we want default message processing function to take control,
-				// because otherwise resizing and closing buttons doesn't work.
-			{
-				DefWindowProc(hwnd, msg, wparam, lparam);
-			}
-		/*}
-		++LMBit;*/
-	}
+	//else if (GetAsyncKeyState(VK_LBUTTON)) // Better LMB pressed, cause it doesn't go so crazy as previous.
+	//{
+	//	vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
+	// 
+	//	if (cursorPos.y > 20)// When cursor is not over the title bar
+	//	{
+	//		changeCellType(cursorPos, cellType::sand);
+	//	}
+	//	else// When it is over the title bar, we want default message processing function to take control,
+	//		// because otherwise resizing and closing buttons doesn't work.
+	//	{
+	//		DefWindowProc(hwnd, msg, wparam, lparam);
+	//	}
+	//}
+	//// Switched to processing mouse holding in main.
 	else
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 }
@@ -201,12 +206,6 @@ void WinShow(HDC dc)
 			{
 				// Not drawing them
 			}
-			//else if(*current == grid.at(9).at(48))
-			//{
-			//	// Not drowing one cell, which tends to change it's type when not needed, perhaps
-			//	// due to strange behaviour of message capture function, which sends that cursor is
-			//	// howering this cell, when it's not. So I've decided to just turn it off.
-			//} //// Not here. In changeCellType
 			else if (current->type == cellType::sand)
 			{
 				
@@ -236,41 +235,51 @@ void changeCellType(vec2 cursorPos, cellType type)
 		for (int j = 0; j < rowAmount; ++j)
 		{
 			if (i == 9) break;
+			// Not drowing column, cells of which tend to change its type when not needed, perhaps
+			// due to strange behaviour of message capture function, which sends that cursor is
+			// howering this cell, when it's not. So I've decided to just turn them off.
 			cell* current = &grid.at(i).at(j);
 			if (cursorPos.x > current->body.left &&
 				cursorPos.y > current->body.top &&
 				cursorPos.x < current->body.right &&
 				cursorPos.y < current->body.bottom)
 			{
-				if (j >= 3)
-				{
-					{
-						grid[i][j - 3].type = type;
-						// For some reason by default cursor coordinates are 3 cells lower, than should be,
-						// so we're correcting that by andjusting spawning height.
-					}
-				}
-				else
-				{
-					grid[i][j].type = type;
-					// For cases, when we can't go higher.
-				}
-
-			}
-			else if (cursorPos.y > screenSize.y)// For cases, when we get lower
-			{
-				if (cursorPos.x > current->body.left &&
-					cursorPos.x < current->body.right) // If cursor is in borders of current cell by X axis
-				{
-					int cellsDown = round((cursorPos.y - screenSize.y) / cellSize.y);// How many cells lower we are, in
-					// accordance to amount of cells we have in Y axis.
-					// e.g. screenSize.y = 100, cursorPos.y = 110, cellSize = 10 -> We are 1 cell lower.
-					int temp = cellAmount.y + cellsDown - 3;
-					if( temp <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
-						grid[i][temp - 1].type = type;
-				}
-			}
+			//	if (current->type == cellType::air)
+			//	{
+			//		if (j >= 3)
+			//		{
+			//			{
+			//				grid[i][j - 3].type = type;
+			//				// For some reason by default cursor coordinates are 3 cells lower, than should be,
+			//				// so we're correcting that by andjusting spawning height.
+			//			}
+			//		}
+			//		else
+			//		{
+			//			grid[i][j].type = type;
+			//			// For cases, when we can't go higher.
+			//		}
+			//	}
+			//}
+			//else if (cursorPos.y > screenSize.y)// For cases, when we get lower
+			//{
+			//	if (cursorPos.x > current->body.left &&
+			//		cursorPos.x < current->body.right) // If cursor is in borders of current cell by X axis
+			//	{
+			//		int cellsDown = round((cursorPos.y - screenSize.y) / cellSize.y);// How many cells lower we are, in
+			//		// accordance to amount of cells we have in Y axis.
+			//		// e.g. screenSize.y = 100, cursorPos.y = 110, cellSize = 10 -> We are 1 cell lower.
+			//		int temp = cellAmount.y + cellsDown - 3;
+			//		if( temp <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
+			//			if(grid[i][temp - 1].type == cellType::air)
+			//				grid[i][temp - 1].type = type;
+			//	}
+			///// Since I've switched LMB processing to main, we have NO need in this ****, no more!
 			
+				grid.at(i).at(j).type = type;
+			
+			}
+
 		}
 }
 void WinProcess()
