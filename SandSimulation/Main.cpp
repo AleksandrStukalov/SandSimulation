@@ -54,10 +54,15 @@ bool operator == (const cell& c1, const cell& c2)
 		c1.type == c2.type );
 }
 
+// Window:
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
 void WinShow(HDC dc);
-void changeCellType(vec2 cursorpos, cellType type);
+// Cell manipulation:
+cell* CellGetCovered(vec2 cursorPos);
+void CellChangeType(vec2 cursorPos, cellType type);
+void CellDelete(vec2 cursorPos);
+// Cell behaviour:
 void WinProcess();
 void goLeftFirst(int i, int j, cell* current);
 void goRightFirst(int i, int j, cell* current);
@@ -115,11 +120,14 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 			{
 				if (cursorPos->y > 20)// When cursor is not over the title bar
 				{
-					changeCellType(vec2(cursorPos->x, cursorPos->y), cellType::sand);
+					CellChangeType(vec2(cursorPos->x, cursorPos->y), cellType::sand);
 				}
 			}
 			/// NOICE!
-			
+			if ((GetKeyState(VK_RBUTTON) & 0x8000) != 0)
+			{
+				CellDelete(vec2(cursorPos->x, cursorPos->y));
+			}
 
 			WinShow(dc);
 			WinProcess();
@@ -153,7 +161,7 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	// 
 	//	if (cursorPos.y > 20)// When cursor is not over the title bar
 	//	{
-	//		changeCellType(cursorPos, cellType::sand);
+	//		CellChangeType(cursorPos, cellType::sand);
 	//	}
 	//	else// When it is over the title bar, we want default message processing function to take control,
 	//		// because otherwise resizing and closing buttons doesn't work.
@@ -241,7 +249,24 @@ void WinShow(HDC dc)
 	DeleteObject(memBM);
 
 }
-void changeCellType(vec2 cursorPos, cellType type)
+
+cell* CellGetCovered(vec2 cursorPos)
+{
+	for (int i = 0; i < columnAmount; ++i)
+		for (int j = 0; j < rowAmount; ++j)
+		{
+			if (i == 9) break;
+			cell* current = &grid.at(i).at(j);
+			if (cursorPos.x > current->body.left &&
+				cursorPos.y > current->body.top &&
+				cursorPos.x < current->body.right &&
+				cursorPos.y < current->body.bottom)
+			{
+				return &grid.at(i).at(j);
+			}
+		}
+}
+void CellChangeType(vec2 cursorPos, cellType type)
 {
 	for (int i = 0; i < columnAmount; ++i)
 		for (int j = 0; j < rowAmount; ++j)
@@ -294,6 +319,26 @@ void changeCellType(vec2 cursorPos, cellType type)
 
 		}
 }
+void CellDelete(vec2 cursorPos)
+{
+	for (int i = 0; i < columnAmount; ++i)
+		for (int j = 0; j < rowAmount; ++j)
+		{
+			if (i == 9) break;
+			// Not drowing column, cells of which tend to change its type when not needed, perhaps
+			// due to strange behaviour of message capture function, which sends that cursor is
+			// howering this cell, when it's not. So I've decided to just turn them off.
+			cell* current = &grid.at(i).at(j);
+			if (cursorPos.x > current->body.left &&
+				cursorPos.y > current->body.top &&
+				cursorPos.x < current->body.right &&
+				cursorPos.y < current->body.bottom)
+			{
+				grid.at(i).at(j).type = cellType::air;
+			}
+
+		}
+}
 void WinProcess()
 {
 	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
@@ -301,7 +346,6 @@ void WinProcess()
 		for (int j = rowAmount - 1; j >= 0; --j)
 		{
 			cell* current = &grid.at(i).at(j);
-
 
 			if (current->type == cellType::sand)
 			{
@@ -329,6 +373,8 @@ void WinProcess()
 
 				// Why the hell I've changed else if to if and everything started to work properly!?
 			}
+
+
 		}
 }
 void goLeftFirst(int i, int j, cell* current)
