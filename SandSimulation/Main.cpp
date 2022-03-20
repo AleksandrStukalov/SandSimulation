@@ -61,7 +61,7 @@ void WinShow(HDC dc);
 // Cell manipulation:
 cell* CellGetCovered(vec2 cursorPos);
 void CellChangeType(vec2 cursorPos, cellType type);
-void CellDelete(vec2 cursorPos);
+//void CellDelete(vec2 cursorPos);
 // Cell behaviour:
 void WinProcess();
 void goLeftFirst(int i, int j, cell* current);
@@ -126,7 +126,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 			/// NOICE!
 			if ((GetKeyState(VK_RBUTTON) & 0x8000) != 0)
 			{
-				CellDelete(vec2(cursorPos->x, cursorPos->y));
+				CellChangeType(vec2(cursorPos->x, cursorPos->y), cellType::air);
+				/*CellDelete(vec2(cursorPos->x, cursorPos->y));*/
+
 			}
 
 			WinShow(dc);
@@ -262,83 +264,92 @@ cell* CellGetCovered(vec2 cursorPos)
 				cursorPos.x < current->body.right &&
 				cursorPos.y < current->body.bottom)
 			{
-				return &grid.at(i).at(j);
+				return current;
 			}
 		}
+	return nullptr;
 }
 void CellChangeType(vec2 cursorPos, cellType type)
 {
-	for (int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
-		{
-			if (i == 9) break;
-			// Not drowing column, cells of which tend to change its type when not needed, perhaps
-			// due to strange behaviour of message capture function, which sends that cursor is
-			// howering this cell, when it's not. So I've decided to just turn them off.
-			cell* current = &grid.at(i).at(j);
-			if (cursorPos.x > current->body.left &&
-				cursorPos.y > current->body.top &&
-				cursorPos.x < current->body.right &&
-				cursorPos.y < current->body.bottom)
-			{
-			//	if (current->type == cellType::air)
-			//	{
-			//		if (j >= 3)
-			//		{
-			//			{
-			//				grid[i][j - 3].type = type;
-			//				// For some reason by default cursor coordinates are 3 cells lower, than should be,
-			//				// so we're correcting that by andjusting spawning height.
-			//			}
-			//		}
-			//		else
-			//		{
-			//			grid[i][j].type = type;
-			//			// For cases, when we can't go higher.
-			//		}
-			//	}
-			//}
-			//else if (cursorPos.y > screenSize.y)// For cases, when we get lower
-			//{
-			//	if (cursorPos.x > current->body.left &&
-			//		cursorPos.x < current->body.right) // If cursor is in borders of current cell by X axis
-			//	{
-			//		int cellsDown = round((cursorPos.y - screenSize.y) / cellSize.y);// How many cells lower we are, in
-			//		// accordance to amount of cells we have in Y axis.
-			//		// e.g. screenSize.y = 100, cursorPos.y = 110, cellSize = 10 -> We are 1 cell lower.
-			//		int temp = cellAmount.y + cellsDown - 3;
-			//		if( temp <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
-			//			if(grid[i][temp - 1].type == cellType::air)
-			//				grid[i][temp - 1].type = type;
-			//	}
-			///// Since I've switched LMB processing to main, we have NO need in this ****, no more!
-			
-				grid.at(i).at(j).type = type;
-			
-			}
-
-		}
+	//for (int i = 0; i < columnAmount; ++i)
+	//	for (int j = 0; j < rowAmount; ++j)
+	//	{
+	//		if (i == 9) break;
+	//		// Not drowing column, cells of which tend to change its type when not needed, perhaps
+	//		// due to strange behaviour of message capture function, which sends that cursor is
+	//		// howering this cell, when it's not. So I've decided to just turn them off.
+	//		cell* current = &grid.at(i).at(j);
+	//		if (cursorPos.x > current->body.left &&
+	//			cursorPos.y > current->body.top &&
+	//			cursorPos.x < current->body.right &&
+	//			cursorPos.y < current->body.bottom)
+	//		{
+	//		//	if (current->type == cellType::air)
+	//		//	{
+	//		//		if (j >= 3)
+	//		//		{
+	//		//			{
+	//		//				grid[i][j - 3].type = type;
+	//		//				// For some reason by default cursor coordinates are 3 cells lower, than should be,
+	//		//				// so we're correcting that by andjusting spawning height.
+	//		//			}
+	//		//		}
+	//		//		else
+	//		//		{
+	//		//			grid[i][j].type = type;
+	//		//			// For cases, when we can't go higher.
+	//		//		}
+	//		//	}
+	//		//}
+	//		//else if (cursorPos.y > screenSize.y)// For cases, when we get lower
+	//		//{
+	//		//	if (cursorPos.x > current->body.left &&
+	//		//		cursorPos.x < current->body.right) // If cursor is in borders of current cell by X axis
+	//		//	{
+	//		//		int cellsDown = round((cursorPos.y - screenSize.y) / cellSize.y);// How many cells lower we are, in
+	//		//		// accordance to amount of cells we have in Y axis.
+	//		//		// e.g. screenSize.y = 100, cursorPos.y = 110, cellSize = 10 -> We are 1 cell lower.
+	//		//		int temp = cellAmount.y + cellsDown - 3;
+	//		//		if( temp <= cellAmount.y)// if corrected cell spawning point is within cellAmount.y
+	//		//			if(grid[i][temp - 1].type == cellType::air)
+	//		//				grid[i][temp - 1].type = type;
+	//		//	}
+	//		///// Since I've switched LMB processing to main, we have NO need in this ****, no more!
+	//		
+	//			grid.at(i).at(j).type = type;
+	//		
+	//		}
+	//
+	//	}
+	cell* cellCovered = CellGetCovered(cursorPos);
+	if (cellCovered != nullptr)
+		cellCovered->type = type;
+	
 }
-void CellDelete(vec2 cursorPos)
-{
-	for (int i = 0; i < columnAmount; ++i)
-		for (int j = 0; j < rowAmount; ++j)
-		{
-			if (i == 9) break;
-			// Not drowing column, cells of which tend to change its type when not needed, perhaps
-			// due to strange behaviour of message capture function, which sends that cursor is
-			// howering this cell, when it's not. So I've decided to just turn them off.
-			cell* current = &grid.at(i).at(j);
-			if (cursorPos.x > current->body.left &&
-				cursorPos.y > current->body.top &&
-				cursorPos.x < current->body.right &&
-				cursorPos.y < current->body.bottom)
-			{
-				grid.at(i).at(j).type = cellType::air;
-			}
-
-		}
-}
+//void CellDelete(vec2 cursorPos)
+//{
+//	//for (int i = 0; i < columnAmount; ++i)
+//	//	for (int j = 0; j < rowAmount; ++j)
+//	//	{
+//	//		if (i == 9) break;
+//	//		// Not drowing column, cells of which tend to change its type when not needed, perhaps
+//	//		// due to strange behaviour of message capture function, which sends that cursor is
+//	//		// howering this cell, when it's not. So I've decided to just turn them off.
+//	//		cell* current = &grid.at(i).at(j);
+//	//		if (cursorPos.x > current->body.left &&
+//	//			cursorPos.y > current->body.top &&
+//	//			cursorPos.x < current->body.right &&
+//	//			cursorPos.y < current->body.bottom)
+//	//		{
+//	//			grid.at(i).at(j).type = cellType::air;
+//	//		}
+//	//
+//	//	}
+//
+//	cell* cellCovered = CellGetCovered(cursorPos);
+//	if (cellCovered != nullptr)
+//		cellCovered->type = cellType::air;
+//}
 void WinProcess()
 {
 	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
