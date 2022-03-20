@@ -26,7 +26,12 @@ bool operator != (const vec2& v1, const vec2& v2)
 	return (v1.x != v2.y &&
 		v1.y != v2.y);
 }
-vec2 screenSize{ 2000, 1000 };
+bool operator == (const vec2& v1, const vec2& v2)
+{
+	return (v1.x == v2.x &&
+		v1.y == v2.y);
+}
+vec2 screenSize{ 1000, 800 };
 vec2 cellSize{ 10,10 };
 
 vec2 cellAmount;
@@ -44,6 +49,14 @@ public:
 	RECT body;
 	cellType type;
 };
+bool operator == (const cell& c1, const cell& c2)
+{
+	return (c1.body.left == c2.body.left &&
+		c1.body.right == c2.body.right &&
+		c1.body.top == c2.body.top &&
+		c1.body.bottom == c2.body.bottom &&
+		c1.type == c2.type );
+}
 
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 void WinInit(vec2 screenSize);
@@ -97,8 +110,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	return 0;
 }
 
+int LMBit = 0;
 LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+	
 	if (msg == WM_DESTROY)
 		PostQuitMessage(0);
 	else if (msg == WM_SIZE)
@@ -116,16 +131,19 @@ LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	else if (GetAsyncKeyState(VK_LBUTTON)) // Better LMB pressed, cause it doesn't go so crazy as previous.
 	{
 		vec2 cursorPos{ LOWORD(lparam), HIWORD(lparam) };
-		if (cursorPos.y > 20)// When cursor is not over the title bar
-		{
-			changeCellType(cursorPos, cellType::sand);
-		}
-		else// When it is over the title bar, we want default message processing function to take control,
-			// because otherwise resizing and closing buttons doesn't work.
-		{
-			DefWindowProc(hwnd, msg, wparam, lparam);
-		}
-		
+		/*if (LMBit != 1)
+		{*/
+			if (cursorPos.y > 20)// When cursor is not over the title bar
+			{
+				changeCellType(cursorPos, cellType::sand);
+			}
+			else// When it is over the title bar, we want default message processing function to take control,
+				// because otherwise resizing and closing buttons doesn't work.
+			{
+				DefWindowProc(hwnd, msg, wparam, lparam);
+			}
+		/*}
+		++LMBit;*/
 	}
 	else
 		return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -183,8 +201,15 @@ void WinShow(HDC dc)
 			{
 				// Not drawing them
 			}
+			else if(*current == grid.at(9).at(48))
+			{
+				// Not drowing one cell, which tends to change it's type when not needed, perhaps
+				// due to strange behaviour of message capture function, which sends that cursor is
+				// howering this cell, when it's not. So I've decided to just turn it off.
+			}
 			else if (current->type == cellType::sand)
 			{
+				
 				SelectObject(memDC, GetStockObject(DC_PEN));
 				SetDCPenColor(memDC, RGB(0, 0, 0));
 				SelectObject(memDC, GetStockObject(DC_BRUSH));
@@ -244,56 +269,57 @@ void changeCellType(vec2 cursorPos, cellType type)
 						grid[i][temp - 1].type = type;
 				}
 			}
+			
 		}
 }
 void WinProcess()
 {
-	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
-	for (int i = columnAmount - 1; i >= 0; --i)
-		for (int j = rowAmount - 1; j >= 0; --j)
-		{
-			cell* current = &grid.at(i).at(j);
+	//// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
+	//for (int i = columnAmount - 1; i >= 0; --i)
+	//	for (int j = rowAmount - 1; j >= 0; --j)
+	//	{
+	//		cell* current = &grid.at(i).at(j);
 
 
-			if (current->type == cellType::sand)
-			{
-				if (j+1 < cellAmount.y)
-				{
-					cell* bottomNeighboor = &grid[i][j + 1];
+	//		if (current->type == cellType::sand)
+	//		{
+	//			if (j+1 < cellAmount.y)
+	//			{
+	//				cell* bottomNeighboor = &grid[i][j + 1];
 
-					if (bottomNeighboor->type == cellType::air)
-					{
-						bottomNeighboor->type = current->type;
-						current->type = cellType::air;
-					}
-				}
-				if (i - 1 > 0 && j + 1 < cellAmount.y)
-				{
-					cell* leftDownNeighboor = &grid[i - 1][j + 1];
+	//				if (bottomNeighboor->type == cellType::air)
+	//				{
+	//					bottomNeighboor->type = current->type;
+	//					current->type = cellType::air;
+	//				}
+	//			}
+	//			if (i - 1 > 0 && j + 1 < cellAmount.y)
+	//			{
+	//				cell* leftDownNeighboor = &grid[i - 1][j + 1];
 
-					if (leftDownNeighboor->type == cellType::air)
-					{
-						leftDownNeighboor->type = current->type;
-						current->type = cellType::air;
-					}
-				}
-				if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
-				{
-					cell* rightDownNeighboor = &grid[i + 1][j + 1];
+	//				if (leftDownNeighboor->type == cellType::air)
+	//				{
+	//					leftDownNeighboor->type = current->type;
+	//					current->type = cellType::air;
+	//				}
+	//			}
+	//			if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+	//			{
+	//				cell* rightDownNeighboor = &grid[i + 1][j + 1];
 
-					if (rightDownNeighboor->type == cellType::air)
-					{
-						rightDownNeighboor->type = current->type;
-						current->type = cellType::air;
-					}
-				}
-				else
-				{
-					// Stay put.
-				}
-				
-				// Why the hell I've changed else if to if and everything started to work properly!?
-			}
+	//				if (rightDownNeighboor->type == cellType::air)
+	//				{
+	//					rightDownNeighboor->type = current->type;
+	//					current->type = cellType::air;
+	//				}
+	//			}
+	//			else
+	//			{
+	//				// Stay put.
+	//			}
+	//			
+	//			// Why the hell I've changed else if to if and everything started to work properly!?
+	//		}
 
-		}
+		//}
 }
