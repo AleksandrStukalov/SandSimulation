@@ -314,20 +314,55 @@ void WinProcess()
 						bottomNeighboor->type = current->type;
 						current->type = cellType::air;
 					}
+					if (bottomNeighboor->type == cellType::water)
+					{
+						cellType tempType = bottomNeighboor->type;
+						bottomNeighboor->type = current->type;
+						current->type = tempType;
+					}
 				}
 
 				srand(time(0));
 				int rand = randIntInRange(0, 100);
 				if ( rand % 2 == 0)
 				{
-					goLeftDownFirst(x, y, current);
+					// Go left down
+					if (x - 1 >= 0 && y + 1 < cellAmount.y)
+					{
+						cell* leftDownNeighboor = &grid[x - 1][y + 1];
+
+						if (leftDownNeighboor->type == cellType::air)
+						{
+							leftDownNeighboor->type = current->type;
+							current->type = cellType::air;
+						}
+						if(leftDownNeighboor->type == cellType::water)
+						{
+							leftDownNeighboor->type = current->type;
+								current->type = cellType::water;
+						}
+					}
+					// Go right down
+
 				}
 				else
 				{
-					goRightDownFirst(x, y, current);
-				}
+					if (x + 1 < cellAmount.x && y + 1 < cellAmount.y)
+					{
+						cell* rightDownNeighboor = &grid[x + 1][y + 1];
 
-				// Why the hell I've changed else if to if and everything started to work properly!?
+						if (rightDownNeighboor->type == cellType::air)
+						{
+							rightDownNeighboor->type = current->type;
+							current->type = cellType::air;
+						}
+						if (rightDownNeighboor->type == cellType::water)
+						{
+							rightDownNeighboor->type = current->type;
+							current->type = cellType::water;
+						}
+					}
+				}
 			}
 			if (current->type == cellType::water)
 			{
@@ -357,11 +392,11 @@ void WinProcess()
 				rand = randIntInRange(0, 100);
 				if (rand % 2 == 0)
 				{
-					goLeftFirst(x, y, current);
+					goRightFirst(x, y, current);
 				}
 				else
 				{
-					goRightFirst(x, y, current);
+					goLeftFirst(x, y, current);
 				}
 				
 			}
