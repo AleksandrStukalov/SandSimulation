@@ -2,7 +2,13 @@
 #include "memory.h"// for memset() and malloc()
 #include <vector>
 #include <string>
+#include <random>
+#include <time.h>
 
+int randIntInRange(int min, int max)
+{
+	return (rand() % (max + 1 - min)) + min;
+}
 
 class vec2
 {
@@ -53,6 +59,9 @@ void WinInit(vec2 screenSize);
 void WinShow(HDC dc);
 void changeCellType(vec2 cursorpos, cellType type);
 void WinProcess();
+void goLeftFirst(int i, int j, cell* current);
+void goRightFirst(int i, int j, cell* current);
+
 RECT clientRect;
 
 std::vector<std::vector<cell>> grid;
@@ -293,10 +302,10 @@ void WinProcess()
 		{
 			cell* current = &grid.at(i).at(j);
 
-			
+
 			if (current->type == cellType::sand)
 			{
-				if (j+1 < cellAmount.y)
+				if (j + 1 < cellAmount.y)
 				{
 					cell* bottomNeighboor = &grid[i][j + 1];
 
@@ -306,32 +315,67 @@ void WinProcess()
 						current->type = cellType::air;
 					}
 				}
-				if (i - 1 >= 0 && j + 1 < cellAmount.y)
-				{
-					cell* leftDownNeighboor = &grid[i - 1][j + 1];
 
-					if (leftDownNeighboor->type == cellType::air)
-					{
-						leftDownNeighboor->type = current->type;
-						current->type = cellType::air;
-					}
-				}
-				if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+				srand(time(0));
+				int rand = randIntInRange(0, 100);
+				if ( rand % 2 == 0)
 				{
-					cell* rightDownNeighboor = &grid[i + 1][j + 1];
-
-					if (rightDownNeighboor->type == cellType::air)
-					{
-						rightDownNeighboor->type = current->type;
-						current->type = cellType::air;
-					}
+					goLeftFirst(i, j, current);
 				}
 				else
 				{
-					// Stay put.
+					goRightFirst(i, j, current);
 				}
-				
+
 				// Why the hell I've changed else if to if and everything started to work properly!?
 			}
 		}
+}
+void goLeftFirst(int i, int j, cell* current)
+{
+	if (i - 1 >= 0 && j + 1 < cellAmount.y)
+	{
+		cell* leftDownNeighboor = &grid[i - 1][j + 1];
+
+		if (leftDownNeighboor->type == cellType::air)
+		{
+			leftDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+	{
+		cell* rightDownNeighboor = &grid[i + 1][j + 1];
+
+			if (rightDownNeighboor->type == cellType::air)
+			{
+				rightDownNeighboor->type = current->type;
+					current->type = cellType::air;
+			}
+	}
+	else{}
+}
+void goRightFirst(int i, int j, cell* current)
+{
+	if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+	{
+		cell* rightDownNeighboor = &grid[i + 1][j + 1];
+
+		if (rightDownNeighboor->type == cellType::air)
+		{
+			rightDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	if (i - 1 >= 0 && j + 1 < cellAmount.y)
+	{
+		cell* leftDownNeighboor = &grid[i - 1][j + 1];
+
+		if (leftDownNeighboor->type == cellType::air)
+		{
+			leftDownNeighboor->type = current->type;
+			current->type = cellType::air;
+		}
+	}
+	else {}
 }
