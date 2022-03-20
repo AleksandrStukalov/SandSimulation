@@ -70,7 +70,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 #define WS_CUSTOMWINDOW ( WS_OVERLAPPED | \
 						  WS_CAPTION | \
 						  WS_SYSMENU | \
-						  WS_MINIMIZEBOX )
+						  WS_MINIMIZEBOX | \
+						  WS_MAXIMIZEBOX | \
+						  WS_MAXIMIZE /*| \
+						  WS_SIZEBOX*/)
 
 	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_CUSTOMWINDOW, 0, 0, screenSize.x, screenSize.y, NULL, NULL, NULL, NULL);
 
