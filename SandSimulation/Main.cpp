@@ -72,7 +72,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 						  WS_SYSMENU | \
 						  WS_MINIMIZEBOX )
 
-	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_OVERLAPPEDWINDOW, 0, 0, screenSize.x, screenSize.y, NULL, NULL, NULL, NULL);
+	hwnd = CreateWindow(L"WindowClass", L"Sand Simulation", WS_CUSTOMWINDOW, 0, 0, screenSize.x, screenSize.y, NULL, NULL, NULL, NULL);
 
 	HDC dc = GetDC(hwnd);
 
@@ -303,7 +303,7 @@ void WinProcess()
 						current->type = cellType::air;
 					}
 				}
-				if (i - 1 > 0 && j + 1 < cellAmount.y)
+				if (i - 1 >= 0 && j + 1 < cellAmount.y)
 				{
 					cell* leftDownNeighboor = &grid[i - 1][j + 1];
 
