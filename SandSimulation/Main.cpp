@@ -201,12 +201,12 @@ void WinShow(HDC dc)
 			{
 				// Not drawing them
 			}
-			else if(*current == grid.at(9).at(48))
-			{
-				// Not drowing one cell, which tends to change it's type when not needed, perhaps
-				// due to strange behaviour of message capture function, which sends that cursor is
-				// howering this cell, when it's not. So I've decided to just turn it off.
-			}
+			//else if(*current == grid.at(9).at(48))
+			//{
+			//	// Not drowing one cell, which tends to change it's type when not needed, perhaps
+			//	// due to strange behaviour of message capture function, which sends that cursor is
+			//	// howering this cell, when it's not. So I've decided to just turn it off.
+			//} //// Not here. In changeCellType
 			else if (current->type == cellType::sand)
 			{
 				
@@ -235,6 +235,7 @@ void changeCellType(vec2 cursorPos, cellType type)
 	for (int i = 0; i < columnAmount; ++i)
 		for (int j = 0; j < rowAmount; ++j)
 		{
+			if (i == 9) break;
 			cell* current = &grid.at(i).at(j);
 			if (cursorPos.x > current->body.left &&
 				cursorPos.y > current->body.top &&
@@ -274,52 +275,51 @@ void changeCellType(vec2 cursorPos, cellType type)
 }
 void WinProcess()
 {
-	//// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
-	//for (int i = columnAmount - 1; i >= 0; --i)
-	//	for (int j = rowAmount - 1; j >= 0; --j)
-	//	{
-	//		cell* current = &grid.at(i).at(j);
+	// Iterating from down to up, for the reason not to process the cells, which type just has been recently changed in the same loop.
+	for (int i = columnAmount - 1; i >= 0; --i)
+		for (int j = rowAmount - 1; j >= 0; --j)
+		{
+			cell* current = &grid.at(i).at(j);
 
+			
+			if (current->type == cellType::sand)
+			{
+				if (j+1 < cellAmount.y)
+				{
+					cell* bottomNeighboor = &grid[i][j + 1];
 
-	//		if (current->type == cellType::sand)
-	//		{
-	//			if (j+1 < cellAmount.y)
-	//			{
-	//				cell* bottomNeighboor = &grid[i][j + 1];
+					if (bottomNeighboor->type == cellType::air)
+					{
+						bottomNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				if (i - 1 > 0 && j + 1 < cellAmount.y)
+				{
+					cell* leftDownNeighboor = &grid[i - 1][j + 1];
 
-	//				if (bottomNeighboor->type == cellType::air)
-	//				{
-	//					bottomNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			if (i - 1 > 0 && j + 1 < cellAmount.y)
-	//			{
-	//				cell* leftDownNeighboor = &grid[i - 1][j + 1];
+					if (leftDownNeighboor->type == cellType::air)
+					{
+						leftDownNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
+				{
+					cell* rightDownNeighboor = &grid[i + 1][j + 1];
 
-	//				if (leftDownNeighboor->type == cellType::air)
-	//				{
-	//					leftDownNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			if (i + 1 < cellAmount.x && j + 1 < cellAmount.y)
-	//			{
-	//				cell* rightDownNeighboor = &grid[i + 1][j + 1];
-
-	//				if (rightDownNeighboor->type == cellType::air)
-	//				{
-	//					rightDownNeighboor->type = current->type;
-	//					current->type = cellType::air;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				// Stay put.
-	//			}
-	//			
-	//			// Why the hell I've changed else if to if and everything started to work properly!?
-	//		}
-
-		//}
+					if (rightDownNeighboor->type == cellType::air)
+					{
+						rightDownNeighboor->type = current->type;
+						current->type = cellType::air;
+					}
+				}
+				else
+				{
+					// Stay put.
+				}
+				
+				// Why the hell I've changed else if to if and everything started to work properly!?
+			}
+		}
 }
