@@ -57,6 +57,7 @@ public:
 	cellType type;
 	bool isUpdated = false;// for the reason not to update the cells, that was already updated.
 	step previousStep;
+	int x, y;// grid coordinates.
 };
 bool operator == (const cell& c1, const cell& c2)
 {
@@ -67,6 +68,10 @@ bool operator == (const cell& c1, const cell& c2)
 		c1.type == c2.type);
 }
 
+int randIntInRange(int min, int max)
+{
+	return (rand() % (max + 1 - min)) + min;
+}
 // Function declarations:
 // Window:
 LRESULT WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -205,8 +210,13 @@ void WinInit(vec2 newScreenSize)
 			c.body.top = cellSize.y * y;
 			c.body.bottom = cellSize.y * (y + 1);
 
-			c.type = cellType::air;
+			if (y > (cellAmount.y / 2))
+				c.type = cellType::water;
+			else
+				c.type = cellType::air;
 
+			c.x = x;
+			c.y = y;
 
 			grid.at(x).push_back(c);
 		}
@@ -400,7 +410,7 @@ void WinProcess()
 						continue;
 					}
 
-					if (direction == 'l')
+					/*if (direction == 'l')
 					{
 						if (CellIfPossibleGoLeft(current, x, y) ||
 							CellIfPossibleGoRight(current, x, y))
@@ -417,9 +427,11 @@ void WinProcess()
 							direction = 'l';
 							continue;
 						}
-					}
+					}*/
 
-								
+					CellIfPossibleGoLeft(current, x, y);
+					CellIfPossibleGoRight(current, x, y);
+
 
 
 					
@@ -450,12 +462,49 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 		cell* bottomNeighboor = &grid[x][y + 1];
 		if (current->type == cellType::sand)
 		{
-			if (bottomNeighboor->type == cellType::air || bottomNeighboor->type == cellType::water)
+			if (bottomNeighboor->type == cellType::air/* || bottomNeighboor->type == cellType::water*/)
 			{
 				CellSwapTypes(current, bottomNeighboor);// Move down
 				bottomNeighboor->previousStep = step::down;
 				return true;
 			}
+			if (bottomNeighboor->type == cellType::water)
+			{
+				// Make sand sink:
+				bottomNeighboor->type = cellType::sand;
+				// Make water flow on the surface randomly:
+				srand(time(0));
+				int rand = randIntInRange(-5, 5);
+				
+				cell* randCell = &grid.at(x + rand).at(y);
+				while (true)
+				{
+					if (randCell->type == cellType::air)
+					{
+						randCell->type = cellType::water;
+						break;
+					}
+					else
+					{
+						// Take cell on top and repeat process
+						randCell = &grid.at(randCell->x).at(randCell->y - 1);
+					}
+					
+				}
+				current->type = cellType::air;
+
+				bottomNeighboor->previousStep = step::down;
+				return true;
+			}
+			/*if (bottomNeighboor->type == cellType::water)
+			{
+				srand(time(0));
+				int rand = randIntInRange(-5, 5);
+				cell* randCell = &grid.at(x + rand).at(y);
+				CellSwapTypes(randCell, bottomNeighboor);
+				bottomNeighboor->previousStep = step::down;w
+				return true;
+			}*/
 		}
 		if (current->type == cellType::water)
 		{
