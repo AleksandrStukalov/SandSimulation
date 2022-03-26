@@ -1,4 +1,4 @@
-#include "Windows.h"
+﻿#include "Windows.h"
 #include "memory.h"// for memset() and malloc()
 #include <vector>
 #include <string>
@@ -210,7 +210,7 @@ void WinInit(vec2 newScreenSize)
 			c.body.top = cellSize.y * y;
 			c.body.bottom = cellSize.y * (y + 1);
 
-			if (y > (cellAmount.y / 2))
+			if (y > cellAmount.y / 2)
 				c.type = cellType::water;
 			else
 				c.type = cellType::air;
@@ -277,7 +277,9 @@ void WinShow(HDC dc, vec2 cursorPos)
 			
 		}
 
-
+	// TODO: Creating multiple cells in one touch
+	// For cursor I've previously came up with a thicng, that we caņ just create an ellipse, and then, iterating over the grid,
+	// check wether or not current cell is inside this ellipse.
 
 	BitBlt(dc, 0, 0, cx, cy, memDC, 0, 0, SRCCOPY);
 	DeleteDC(memDC);
@@ -399,7 +401,7 @@ void WinProcess()
 					//		continue;
 					//	}
 					//}
-					if (current->previousStep == step::left)
+					/*if (current->previousStep == step::left)
 					{
 						CellIfPossibleGoLeft(current, x, y);
 						continue;
@@ -408,7 +410,7 @@ void WinProcess()
 					{
 						CellIfPossibleGoRight(current, x, y);
 						continue;
-					}
+					}*/
 
 					/*if (direction == 'l')
 					{
@@ -429,8 +431,8 @@ void WinProcess()
 						}
 					}*/
 
-					CellIfPossibleGoLeft(current, x, y);
-					CellIfPossibleGoRight(current, x, y);
+					if(CellIfPossibleGoLeft(current, x, y)) continue;
+					if(CellIfPossibleGoRight(current, x, y)) continue;
 
 
 
@@ -474,17 +476,23 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 				bottomNeighboor->type = cellType::sand;
 				// Make water flow on the surface randomly:
 				srand(time(0));
-				int rand = randIntInRange(-5, 5);
-				
+				int rand;
+				while (true)
+				{
+					rand = randIntInRange(-5, 5);
+					if (x + rand < cellAmount.x &&
+						x + rand >= 0)
+						break;
+				}
 				cell* randCell = &grid.at(x + rand).at(y);
 				while (true)
 				{
-					if (randCell->type == cellType::air)
+					if (randCell->type == cellType::air)// if we've reached the water surface
 					{
 						randCell->type = cellType::water;
 						break;
 					}
-					else
+					else// if we are still underwater
 					{
 						// Take cell on top and repeat process
 						randCell = &grid.at(randCell->x).at(randCell->y - 1);
@@ -496,15 +504,7 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 				bottomNeighboor->previousStep = step::down;
 				return true;
 			}
-			/*if (bottomNeighboor->type == cellType::water)
-			{
-				srand(time(0));
-				int rand = randIntInRange(-5, 5);
-				cell* randCell = &grid.at(x + rand).at(y);
-				CellSwapTypes(randCell, bottomNeighboor);
-				bottomNeighboor->previousStep = step::down;w
-				return true;
-			}*/
+			
 		}
 		if (current->type == cellType::water)
 		{
