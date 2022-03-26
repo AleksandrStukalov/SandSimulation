@@ -26,10 +26,9 @@ public:
 // Modifiable values:
 vec2 screenSize{ 1200, 800 };
 vec2 cellSize{ 5,5 };
-int brushRadiuss{ 5 };
+int brushRadiuss{ 7 };
 COLORREF waterColor = RGB(0, 117, 200);
 COLORREF sandColor = RGB(245, 245, 220);
-
 
 vec2 cellAmount;
 int rowAmount;
@@ -278,10 +277,22 @@ void WinShow(HDC dc, vec2 cursorPos)
 			
 		}
 
-	// TODO: Creating multiple cells in one touch
-	// For cursor I've previously came up with a thicng, that we caņ just create an ellipse, and then, iterating over the grid,
-	// check wether or not current cell is inside this ellipse.
-
+	// Cursor:
+	SelectObject(memDC, GetStockObject(DC_PEN));
+	SetDCPenColor(memDC, RGB(0, 0, 0));
+	SelectObject(memDC, GetStockObject(DC_BRUSH));
+	if (GetKeyState('S') < 0)
+	{
+		SetDCBrushColor(memDC, sandColor);
+	}
+	else if (GetKeyState('W') < 0)
+	{
+		SetDCBrushColor(memDC, waterColor);
+	}
+	else SetDCBrushColor(memDC, RGB(255, 255, 255));
+	Ellipse(memDC, cursorPos.x - brushRadiuss, cursorPos.y - brushRadiuss, cursorPos.x + brushRadiuss, cursorPos.y + brushRadiuss);
+	
+	// Copying image from memDC to our window dc:
 	BitBlt(dc, 0, 0, cx, cy, memDC, 0, 0, SRCCOPY);
 	DeleteDC(memDC);
 	DeleteObject(memBM);
@@ -311,8 +322,28 @@ void CellSpawn(vec2 cursorPos, cellType type)
 	if (covered != nullptr)
 	{
 		// TODO: Make nearby cells also change type	
+		// For cursor I've previously came up with a thicng, that we caņ just create an ellipse, and then, iterating over the grid,
+		// check wether or not current cell is inside this ellipse.
 
-		covered->type = type;
+		for (int x = 0; x < columnAmount; ++x)
+			for (int y = 0; y < rowAmount; ++y)
+			{
+				cell* current = &grid.at(x).at(y);
+				int brushLeft = cursorPos.x - brushRadiuss;
+				int brushTop = cursorPos.y - brushRadiuss;
+				int brushRight = cursorPos.x + brushRadiuss;
+				int brushBottom = cursorPos.y + brushRadiuss;
+				if (current->body.left >= brushLeft &&
+					current->body.top >= brushTop &&
+					current->body.right <= brushRight &&
+					current->body.bottom <= brushBottom)
+				{
+					current->type = type;
+				}
+				
+			}
+
+		/*covered->type = type;*/
 	}
 
 }
