@@ -35,9 +35,10 @@ vec2 cellAmount;
 int rowAmount;
 int columnAmount;
 
-enum class step
+enum class cellStep
 {
-	down = 0,
+	put,
+	down,
 	downLeft,
 	downRight,
 	left,
@@ -56,7 +57,7 @@ public:
 	RECT body;
 	cellType type;
 	bool isUpdated = false;// for the reason not to update the cells, that was already updated.
-	step previousStep;
+	cellStep previousStep;
 	int x, y;// grid coordinates.
 };
 bool operator == (const cell& c1, const cell& c2)
@@ -210,10 +211,10 @@ void WinInit(vec2 newScreenSize)
 			c.body.top = cellSize.y * y;
 			c.body.bottom = cellSize.y * (y + 1);
 
-			if (y > cellAmount.y / 2)
+			/*if (y > cellAmount.y / 2)
 				c.type = cellType::water;
 			else
-				c.type = cellType::air;
+				*/c.type = cellType::air;
 
 			c.x = x;
 			c.y = y;
@@ -357,16 +358,21 @@ void WinProcess()
 				if (current->type == cellType::water)
 				{
 					// Sand behavior:
-					if (CellIfPossibleGoDown(current, x, y)) continue;
-					// If possible go right down then left down or conversely:
-					else if (direction == 'l')
+					if (CellIfPossibleGoDown(current, x, y))
+					{
+						current->isUpdated = true;
+						goto end;
+					}
+					// Down Left and down right:
+					if (direction == 'l')
 					{
 						// Go down left then down right if possible:
 						if (CellIfPossibleGoDownLeft(current, x, y) ||
 							CellIfPossibleGoDownRight(current, x, y))
 						{
 							direction = 'r';
-							continue;
+							current->isUpdated = true;
+							goto end;
 						}
 					}
 					else if (direction == 'r')
@@ -376,68 +382,58 @@ void WinProcess()
 							CellIfPossibleGoDownLeft(current, x, y))
 						{
 							direction = 'l';
-							continue;
+							current->isUpdated = true;
+							goto end;
 						}
 					}
-					// + Going to sides when possible:
-					// Right then left or conversely:
-					//if (direction == 'l')
-					//{
-					//	// Go left then right if possible:
-					//	if (CellIfPossibleGoLeft(current, x, y) ||
-					//		CellIfPossibleGoRight(current, x, y))
-					//	{
-					//		direction = 'r';
-					//		continue;
-					//	}
-					//}
-					//if (direction == 'r')
-					//{
-					//	// Go right then left if possible:
-					//	if (CellIfPossibleGoRight(current, x, y) ||
-					//		CellIfPossibleGoLeft(current, x, y))
-					//	{
-					//		direction = 'l';
-					//		continue;
-					//	}
-					//}
-					/*if (current->previousStep == step::left)
+
+					// Keep moving left or right:
+					if (current->previousStep == cellStep::left)
 					{
 						CellIfPossibleGoLeft(current, x, y);
-						continue;
+						current->isUpdated = true;
+						goto end;
 					}
-					if (current->previousStep == step::right)
+					else if (current->previousStep == cellStep::right)
 					{
 						CellIfPossibleGoRight(current, x, y);
-						continue;
-					}*/
-
-					/*if (direction == 'l')
-					{
-						if (CellIfPossibleGoLeft(current, x, y) ||
-							CellIfPossibleGoRight(current, x, y))
-						{
-							direction = 'r';
-							continue;
-						}
+						current->isUpdated = true;
+						goto end;
 					}
-					if (direction == 'r')
+
+					if (current->previousStep == cellStep::put)
 					{
-						if (CellIfPossibleGoRight(current, x, y) ||
-							CellIfPossibleGoLeft(current, x, y))
+						// Left and right:
+						if (direction == 'l')
 						{
-							direction = 'l';
-							continue;
+							if (CellIfPossibleGoLeft(current, x, y) ||
+								CellIfPossibleGoRight(current, x, y))
+							{
+								direction = 'r';
+								current->isUpdated = true;
+								goto end;
+							}
 						}
-					}*/
+						if (direction == 'r')
+						{
+							if (CellIfPossibleGoRight(current, x, y) ||
+								CellIfPossibleGoLeft(current, x, y))
+							{
+								direction = 'l';
+								current->isUpdated = true;
+								goto end;
+							}
+						}
 
-					if(CellIfPossibleGoLeft(current, x, y)) continue;
-					if(CellIfPossibleGoRight(current, x, y)) continue;
-
-
-
+					}
 					
-					current->isUpdated = true;
+					/*if(CellIfPossibleGoRight(current, x, y)) continue;
+					if(CellIfPossibleGoLeft(current, x, y)) continue;*/
+
+						
+				end:
+					if(current->isUpdated == false)
+						current->previousStep = cellStep::put;
 				}
 			}
 		}
@@ -467,7 +463,7 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 			if (bottomNeighboor->type == cellType::air/* || bottomNeighboor->type == cellType::water*/)
 			{
 				CellSwapTypes(current, bottomNeighboor);// Move down
-				bottomNeighboor->previousStep = step::down;
+				bottomNeighboor->previousStep = cellStep::down;
 				return true;
 			}
 			if (bottomNeighboor->type == cellType::water)
@@ -501,7 +497,7 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 				}
 				current->type = cellType::air;
 
-				bottomNeighboor->previousStep = step::down;
+				bottomNeighboor->previousStep = cellStep::down;
 				return true;
 			}
 			
@@ -511,7 +507,7 @@ bool CellIfPossibleGoDown(cell* current, int x, int y)
 			if (bottomNeighboor->type == cellType::air)
 			{
 				CellSwapTypes(current, bottomNeighboor);// Move down
-				bottomNeighboor->previousStep = step::down;
+				bottomNeighboor->previousStep = cellStep::down;
 				return true;
 			}
 		}
@@ -529,7 +525,7 @@ bool CellIfPossibleGoDownLeft(cell* current, int x, int y)
 			if (downLeftNeighboor->type == cellType::air || downLeftNeighboor->type == cellType::water)
 			{
 				CellSwapTypes(current, downLeftNeighboor);// Move left down
-				downLeftNeighboor->previousStep = step::downLeft;
+				downLeftNeighboor->previousStep = cellStep::downLeft;
 				return true;
 			}
 		}
@@ -538,7 +534,7 @@ bool CellIfPossibleGoDownLeft(cell* current, int x, int y)
 			if (downLeftNeighboor->type == cellType::air)
 			{
 				CellSwapTypes(current, downLeftNeighboor);// Move left down
-				downLeftNeighboor->previousStep = step::downLeft;
+				downLeftNeighboor->previousStep = cellStep::downLeft;
 				return true;
 			}
 		}
@@ -556,7 +552,7 @@ bool CellIfPossibleGoDownRight(cell* current, int x, int y)
 			if (downRightNeighboor->type == cellType::air || downRightNeighboor->type == cellType::water)
 			{
 				CellSwapTypes(current, downRightNeighboor);// Move right down
-				downRightNeighboor->previousStep = step::downRight;
+				downRightNeighboor->previousStep = cellStep::downRight;
 				return true;
 			}
 		}
@@ -565,7 +561,7 @@ bool CellIfPossibleGoDownRight(cell* current, int x, int y)
 			if (downRightNeighboor->type == cellType::air)
 			{
 				CellSwapTypes(current, downRightNeighboor);// Move right down
-				downRightNeighboor->previousStep = step::downRight;
+				downRightNeighboor->previousStep = cellStep::downRight;
 				return true;
 			}
 		}
@@ -582,7 +578,7 @@ bool CellIfPossibleGoLeft(cell* current, int x, int y)
 			if (leftNeighboor->type == cellType::air || leftNeighboor->type == cellType::water)
 			{
 				CellSwapTypes(current, leftNeighboor);// Move left
-				leftNeighboor->previousStep = step::left;
+				leftNeighboor->previousStep = cellStep::left;
 				return true;
 			}
 		}
@@ -591,7 +587,7 @@ bool CellIfPossibleGoLeft(cell* current, int x, int y)
 			if (leftNeighboor->type == cellType::air)
 			{
 				CellSwapTypes(current, leftNeighboor);// Move left
-				leftNeighboor->previousStep = step::left;
+				leftNeighboor->previousStep = cellStep::left;
 				return true;
 			}
 		}
@@ -609,7 +605,7 @@ bool CellIfPossibleGoRight(cell* current, int x, int y)
 			if (rightNeighboor->type == cellType::air || rightNeighboor->type == cellType::water)
 			{
 				CellSwapTypes(current, rightNeighboor);// Move right
-				rightNeighboor->previousStep = step::right;
+				rightNeighboor->previousStep = cellStep::right;
 				return true;
 			}
 		}
@@ -618,7 +614,7 @@ bool CellIfPossibleGoRight(cell* current, int x, int y)
 			if (rightNeighboor->type == cellType::air)
 			{
 				CellSwapTypes(current, rightNeighboor);// Move right
-				rightNeighboor->previousStep = step::right;
+				rightNeighboor->previousStep = cellStep::right;
 				return true;
 			}
 		}
