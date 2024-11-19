@@ -24,7 +24,7 @@ public:
 };
 
 // Modifiable values:
-vec2 screenSize{ 1200, 800 };
+vec2 screenSize{ 200, 200 };
 vec2 cellSize{ 5,5 };
 int brushRadiuss{ 7 };
 COLORREF waterColor = RGB(0, 117, 200);
@@ -329,11 +329,10 @@ void CellSpawn(vec2 cursorPos, cellType type)
 			for (int y = 0; y < rowAmount; ++y)
 			{
 				cell* current = &grid.at(x).at(y);
-				int brushLeft = cursorPos.x - brushRadiuss;
 				int brushTop = cursorPos.y - brushRadiuss;
 				int brushRight = cursorPos.x + brushRadiuss;
 				int brushBottom = cursorPos.y + brushRadiuss;
-				if (current->body.left >= brushLeft &&
+				if (current->body.left >= (cursorPos.x - brushRadiuss) &&
 					current->body.top >= brushTop &&
 					current->body.right <= brushRight &&
 					current->body.bottom <= brushBottom)
